@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  UserPoolClientRef:
+    Type: String
+  UserPoolRef:
+    Type: String
+  HindsiteRestAPIRef:
+    Type: String
+  CloudFormationCognitoUserPoolDomainArn:
+    Type: String
+Resources:
+  UserPoolDomain:
+    Type: Custom::CognitoUserPoolDomain
+    Properties:
+      ServiceToken: !Ref 'CloudFormationCognitoUserPoolDomainArn'
+      ClientId: !Ref 'UserPoolClientRef'
+      UserPoolId: !Ref 'UserPoolRef'
+      EndpointUrl: !Join
+        - ''
+        - - https://
+          - !Ref 'HindsiteRestAPIRef'
+          - .execute-api.
+          - !Ref 'AWS::Region'
+          - .amazonaws.com/Production
+      DomainName: !Join
+        - ''
+        - - hs-auth-
+          - !Ref 'AWS::AccountId'

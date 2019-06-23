@@ -1,0 +1,109 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  VpcDhcpOptions:
+    Type: AWS::EC2::DHCPOptions
+    Properties:
+      DomainName: ec2.internal
+      DomainNameServers:
+        - AmazonProvidedDNS
+  hindsitevpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      InstanceTenancy: default
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'false'
+      Tags:
+        - Key: project
+          Value: hindsite
+  VpcDhcpOptionsAssociation:
+    Type: AWS::EC2::VPCDHCPOptionsAssociation
+    Properties:
+      DhcpOptionsId: !Ref 'VpcDhcpOptions'
+      VpcId: !Ref 'hindsitevpc'
+  hindsitepublicsubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.128.0/17
+      VpcId: !Ref 'hindsitevpc'
+      AvailabilityZone: !Select
+        - 1
+        - !GetAZs ''
+  hindsiteprivatesubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.0.0/17
+      VpcId: !Ref 'hindsitevpc'
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs ''
+  VPCPrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref 'hindsitevpc'
+  VPCPublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref 'hindsitevpc'
+  PrivateSubnetRouteAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref 'VPCPrivateRouteTable'
+      SubnetId: !Ref 'hindsiteprivatesubnet'
+  PublicSubnetRouteAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref 'VPCPublicRouteTable'
+      SubnetId: !Ref 'hindsitepublicsubnet'
+  VPCPublicGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties: {}
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref 'VPCPublicGateway'
+      VpcId: !Ref 'hindsitevpc'
+  RouteTableGatewayRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref 'VPCPublicGateway'
+      RouteTableId: !Ref 'VPCPublicRouteTable'
+#  NatGateway:
+#    Type: AWS::EC2::NatGateway
+#    Properties:
+#      AllocationId: !GetAtt 'EIP.AllocationId'
+#      SubnetId: !Ref 'hindsitepublicsubnet'
+#  EIP:
+#    Type: AWS::EC2::EIP
+#    Properties:
+#      Domain: vpc
+#  RouteTableNatRoute:
+#    Type: AWS::EC2::Route
+#    Properties:
+#      DestinationCidrBlock: '0.0.0.0/0'
+#      NatGatewayId: !Ref 'NatGateway'
+#      RouteTableId: !Ref 'VPCPrivateRouteTable'
+  DefaultSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: hs-default-sg
+      GroupDescription: Hindsite security group used for lambda functions and serverless
+        DB instance
+      VpcId: !Ref 'hindsitevpc'
+  DefaultSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    DependsOn: DefaultSecurityGroup
+    Properties:
+      GroupId: !Ref 'DefaultSecurityGroup'
+      IpProtocol: -1
+      FromPort: -1
+      ToPort: -1
+      SourceSecurityGroupId: !Ref 'DefaultSecurityGroup'
+Outputs:
+  DefaultSecurityGroupRef:
+    Value: !Ref 'DefaultSecurityGroup'
+  HindsitePrivateSubnetRef:
+    Value: !Ref 'hindsiteprivatesubnet'
+  HindsitePublicSubnetRef:
+    Value: !Ref 'hindsitepublicsubnet'

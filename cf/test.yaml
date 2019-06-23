@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: "sam-app"
+Parameters:
+  ExecutionRoleArn:
+    Type: String
+    Default: "arn:aws:iam::739169548126:role/hindsite-lambda-execution2"
+  DbEndpoint:
+    Type: String
+    Default: "test25-rdsstack-q27pr5tvqqec-hindsitedb-1e2bb4060vpmj.cluster-cpq65gbzjxsl.us-east-1.rds.amazonaws.com"
+  DbSecret:
+    Type: String
+    Default: "arn:aws:secretsmanager:us-east-1:739169548126:secret:DatabaseSecret-FbyVc1Y1PXDn-otkE5I"
+  CoreBucketRef:
+    Type: String
+    Default: "hindsite-b5031e70-9245-11e9-80ad-0eaa79b17470"
+  S3RedirectDestination:
+    Type: String
+    Default: "hindsite-ui-b5031e70-9245-11e9-80ad-0eaa79b17470/static/"
+  CognitoUserPool:
+    Type: String
+    Default: "arn:aws:cognito-idp:us-east-1:739169548126:userpool/us-east-1_JtynR37hy"
+  UserPoolClientRef:
+    Type: String
+    Default: "6jqtf0jfcetackb7cqh72begsc"
+  ApiGatewayCloudWatchLogsRoleArn:
+    Type: String
+    Default: "arn:aws:iam::739169548126:role/test25-IamStack-1L5Q9SP7B-ApiGatewayCloudWatchLogs-1XZKYOZ7PNOSW"
+
+Resources:
+ Dependencies:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: hindsite-dependencies
+      Description: General dependencies for Hindsite functions
+      ContentUri: s3://hindsite-sam/b51ef2a9a0ba02d6b6ebd73645254663
+      CompatibleRuntimes:
+      - python3.7
+      LicenseInfo: MIT
+      RetentionPolicy: Retain
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  HelloWorldApi:
+    Value: !Join
+      - ""
+      - - "http://s3."
+        - !Ref "AWS::Region"
+        - ".amazonaws.com/"
+        - !Ref "S3RedirectDestination"

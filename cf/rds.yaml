@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  DatabaseSecret:
+    Type: String
+  DefaultSecurityGroupRef:
+    Type: String
+  HindsitePrivateSubnetRef:
+    Type: String
+  HindsitePublicSubnetRef:
+    Type: String
+  CloudFormationCognitoUserPoolDomainArn:
+    Type: String
+  CloudFormationSetupDatabaseArn:
+    Type: String
+  CloudFormationSetupUIArn:
+    Type: String
+Resources:
+  hindsitedbsubnetgroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnet group used for Hindsite's database
+      DBSubnetGroupName: hindsite-db-subnet-group
+      SubnetIds:
+        - !Ref 'HindsitePrivateSubnetRef'
+        - !Ref 'HindsitePublicSubnetRef'
+  hindsitedb:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      Engine: aurora
+      EngineMode: serverless
+      MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:username}}' ]]
+      MasterUserPassword: !Join ['', ['{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:password}}' ]]
+      DBSubnetGroupName: !Ref 'hindsitedbsubnetgroup'
+      VpcSecurityGroupIds:
+        - !Ref 'DefaultSecurityGroupRef'
+      ScalingConfiguration:
+        AutoPause: false
+        MaxCapacity: 64
+        MinCapacity: 2
+  SetupDatabase:
+    Type: Custom::SetupDatabase
+    Properties:
+      ServiceToken: !Ref 'CloudFormationSetupDatabaseArn'
+      DatabaseHost: !GetAtt 'hindsitedb.Endpoint.Address'
+      DbEndpoint: !Ref hindsitedb
+      DbSecret: !Ref DatabaseSecret
+Outputs:
+  DbEndpoint:
+    Value: !GetAtt 'hindsitedb.Endpoint.Address'
+  DbUser:
+    Value: hindsite

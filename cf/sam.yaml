@@ -1,0 +1,1355 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: "sam-app"
+Parameters:
+  ExecutionRoleArn:
+    Type: String
+  DbEndpoint:
+    Type: String
+  DbSecret:
+    Type: String
+  CoreBucketRef:
+    Type: String
+  S3RedirectDestination:
+    Type: String
+  CognitoUserPool:
+    Type: String
+  UserPoolClientRef:
+    Type: String
+  ApiGatewayCloudWatchLogsRoleArn:
+    Type: String
+  DependenciesLayer:
+    Type: String
+
+Globals:
+  Function:
+    Timeout: 5
+  Api:
+    Cors:
+      AllowMethods: "'*'"
+      AllowHeaders: "'*'"
+      AllowOrigin: "'*'"
+Resources:
+  ApiCreateProject:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://hindsite-sam/c57eb78ce3ea5396784f00f4a3963e96
+      Handler: create_project.lambda_handler
+      Runtime: python3.7
+      Role:
+        Ref: ExecutionRoleArn
+      Layers:
+      - Ref: DependenciesLayer
+      Environment:
+        Variables:
+          DbEndpoint:
+            Ref: DbEndpoint
+          DbSecret:
+            Ref: DbSecret
+      Events:
+        Test:
+          Type: Api
+          Properties:
+            RestApiId: !Ref "ApiGatewayApi"
+            Path: /api/project/create
+            Method: post
+  ApiGetScreenshot:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://hindsite-sam/cce8a99e6470de25db6b67560817c597
+      Handler: get_screenshot.lambda_handler
+      Runtime: python3.7
+      Role:
+        Ref: ExecutionRoleArn
+      Layers:
+      - Ref: DependenciesLayer
+      Environment:
+        Variables:
+          CoreBucketRef:
+            Ref: CoreBucketRef
+      Events:
+        Test:
+          Type: Api
+          Properties:
+            RestApiId: !Ref "ApiGatewayApi"
+            Path: /screenshot/{object+}
+            Method: get
+  SetupDatabase:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://hindsite-code-repo-us-east-1/functions/1.0/hs-setup-cognito.zip
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.7
+      Role:
+        Ref: ExecutionRoleArn
+      Layers:
+      - Ref: DependenciesLayer
+      Environment:
+        Variables:
+          DbEndpoint:
+            Ref: DbEndpoint
+          DbSecret:
+            Ref: DbSecret
+#  SnsMasterQueuer:
+#    Type: AWS::Serverless::Function
+#    Properties:
+#      CodeUri: s3://hindsite-sam/1e716710394ae0db92bccd8aff386369
+#      Handler: master_queuer.lambda_handler
+#      Runtime: python3.7
+#      Role:
+#        Ref: ExecutionRoleArn
+#      Layers:
+#      - Ref: DependenciesLayer
+#      Environment:
+#        Variables:
+#          DbEndpoint:
+#            Ref: DbEndpoint
+#          DbSecret:
+#            Ref: DbSecret
+#          UnValidatedTargetsArn:
+#            Ref: topichsunvalidref
+#      Events:
+#        Test:
+#          Type: SNS
+#          Properties:
+#            Topic:
+#              Ref: topichsscanref
+#  SnsTargetValidator:
+#    Type: AWS::Serverless::Function
+#    Properties:
+#      CodeUri: s3://hindsite-sam/6825f5f501dedeb665c819f40aba548c
+#      Handler: validator.lambda_handler
+#      Runtime: python3.7
+#      Role:
+#        Ref: ExecutionRoleArn
+#      Layers:
+#      - Ref: DependenciesLayer
+#      Environment:
+#        Variables:
+#          DbEndpoint:
+#            Ref: DbEndpoint
+#          DbSecret:
+#            Ref: DbSecret
+#          ValidatedTargetsArn:
+#            Ref: topichsvalidref
+#      Events:
+#        Test:
+#          Type: SNS
+#          Properties:
+#            Topic:
+#              Ref: topichsunvalidref
+  ApiGetProjects:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://hindsite-sam/f2dd7ecbb564d9065e15f39009a75742
+      Handler: get_projects.lambda_handler
+      Runtime: python3.7
+      Role:
+        Ref: ExecutionRoleArn
+      Layers:
+      - Ref: DependenciesLayer
+      Environment:
+        Variables:
+          DbEndpoint:
+            Ref: DbEndpoint
+          DbSecret:
+            Ref: DbSecret
+      Events:
+        Test:
+          Type: Api
+          Properties:
+            RestApiId: !Ref "ApiGatewayApi"
+            Path: /api/projects
+            Method: get
+#  SnsScreenshotter:
+#    Type: AWS::Serverless::Function
+#    Properties:
+#      CodeUri: s3://hindsite-sam/b9f074b9641c0c65984ac749aabf45d5
+#      Handler: screenshotter.lambda_handler
+#      Runtime: python3.7
+#      Role:
+#        Ref: ExecutionRoleArn
+#      Layers:
+#      - Ref: DependenciesLayer
+#      Environment:
+#        Variables:
+#          DbEndpoint:
+#            Ref: DbEndpoint
+#          DbSecret:
+#            Ref: DbSecret
+#      Events:
+#        Test:
+#          Type: SNS
+#          Properties:
+#            RestApiId: !Ref "ApiGatewayApi"
+#            Topic:
+#              Ref: topichscontdiscref
+#  SnsPortScanner:
+#    Type: AWS::Serverless::Function
+#    Properties:
+#      CodeUri: s3://hindsite-sam/64988f7fa9a54038a16d06fe76d4ab90
+#      Handler: port_scanner.lambda_handler
+#      Runtime: python3.7
+#      Role:
+#        Ref: ExecutionRoleArn
+#      Timeout: 60
+#      Layers:
+#      - Ref: DependenciesLayer
+#      Environment:
+#        Variables:
+#          DbEndpoint:
+#            Ref: DbEndpoint
+#          DbSecret:
+#            Ref: DbSecret
+#          ValidatedTargetsArn:
+#            Ref: topichsvalidref
+#      Events:
+#        Test:
+#          Type: SNS
+#          Properties:
+#            RestApiId: !Ref "ApiGatewayApi"
+#            Topic:
+#              Ref: topichsportref
+  ApiCreateScan:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://hindsite-sam/aeccc61e3976ab39701644b70005ded3
+      Handler: create_scan.lambda_handler
+      Runtime: python3.7
+      Role:
+        Ref: ExecutionRoleArn
+      Layers:
+      - Ref: DependenciesLayer
+      Environment:
+        Variables:
+          DbEndpoint:
+            Ref: DbEndpoint
+          DbSecret:
+            Ref: DbSecret
+#          ScanExecutedArn:
+#            Ref: topichsscanref
+      Events:
+        Test:
+          Type: Api
+          Properties:
+            RestApiId: !Ref "ApiGatewayApi"
+            Path: /api/scan/create
+            Method: post
+#  SnsContentDiscoveryQueuer:
+#    Type: AWS::Serverless::Function
+#    Properties:
+#      CodeUri: s3://hindsite-sam/4458b674ce02d119ee1c26814d312b7d
+#      Handler: content_discovery_queuer.lambda_handler
+#      Runtime: python3.7
+#      Role:
+#        Ref: ExecutionRoleArn
+#      Layers:
+#      - Ref: DependenciesLayer
+#      Environment:
+#        Variables:
+#          ContentScanArn:
+#            Ref: topichscontentref
+#          PortScanArn:
+#            Ref: topichsportref
+#          CoreBucketRef:
+#            Ref: CoreBucketRef
+#      Events:
+#        Test:
+#          Type: SNS
+#          Properties:
+#            Topic:
+#              Ref: topichsportref
+  ApiGetCognito:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://hindsite-sam/get_cognito.zip
+      Handler: get_cognito.lambda_handler
+      Runtime: python3.7
+      Role:
+        Ref: ExecutionRoleArn
+      Layers:
+      - Ref: DependenciesLayer
+      Environment:
+        Variables:
+          userPoolId:
+            Ref: CognitoUserPool
+          userPoolWebClientId:
+            Ref: UserPoolClientRef
+      Events:
+        Test:
+          Type: Api
+          Properties:
+            RestApiId: !Ref "ApiGatewayApi"
+            Path: /api/cognito
+            Method: get
+  ApiGetProjectScans:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://hindsite-sam/dfd6ffc6c09773eb79a453f4df1fd6cd
+      Handler: get_project_scans.lambda_handler
+      Runtime: python3.7
+      Role:
+        Ref: ExecutionRoleArn
+      Layers:
+      - Ref: DependenciesLayer
+      Environment:
+        Variables:
+          DbEndpoint:
+            Ref: DbEndpoint
+          DbSecret:
+            Ref: DbSecret
+      Events:
+        Test:
+          Type: Api
+          Properties:
+            RestApiId: !Ref "ApiGatewayApi"
+            Path: /api/project/{projectId}/scans
+            Method: get
+  ApiGetScanTargets:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://hindsite-sam/4f2f36471c05b20294e35e7904e18111
+      Handler: get_scan_targets.lambda_handler
+      Runtime: python3.7
+      Role:
+        Ref: ExecutionRoleArn
+      Layers:
+      - Ref: DependenciesLayer
+      Environment:
+        Variables:
+          DbEndpoint:
+            Ref: DbEndpoint
+          DbSecret:
+            Ref: DbSecret
+      Events:
+        Test:
+          Type: Api
+          Properties:
+            RestApiId: !Ref "ApiGatewayApi"
+            Path: /api/project/{projectId}/scan/{scanId}/targets
+            Method: get
+  ApiGetProjectName:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://hindsite-sam/7089b6019433706e932f520bf6066c30
+      Handler: get_project_name.lambda_handler
+      Runtime: python3.7
+      Role:
+        Ref: ExecutionRoleArn
+      Layers:
+      - Ref: DependenciesLayer
+      Environment:
+        Variables:
+          DbEndpoint:
+            Ref: DbEndpoint
+          DbSecret:
+            Ref: DbSecret
+      Events:
+        Test:
+          Type: Api
+          Properties:
+            RestApiId: !Ref "ApiGatewayApi"
+            Path: /api/project/{projectId}
+            Method: get
+  ApiGetProjectScanStats:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://hindsite-sam/d343cb40fc76e2c992c63281896f39c6
+      Handler: get_project_scan_stats.lambda_handler
+      Runtime: python3.7
+      Role:
+        Ref: ExecutionRoleArn
+      Layers:
+      - Ref: DependenciesLayer
+      Environment:
+        Variables:
+          DbEndpoint:
+            Ref: DbEndpoint
+          DbSecret:
+            Ref: DbSecret
+      Events:
+        Test:
+          Type: Api
+          Properties:
+            RestApiId: !Ref "ApiGatewayApi"
+            Path: /api/project/{projectId}/scans/stats
+            Method: get
+  ApiGetProjectScanResults:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://hindsite-sam/b19931900292103af250f7e789eb8644
+      Handler: get_scan_results.lambda_handler
+      Runtime: python3.7
+      Role:
+        Ref: ExecutionRoleArn
+      Layers:
+      - Ref: DependenciesLayer
+      Environment:
+        Variables:
+          DbEndpoint:
+            Ref: DbEndpoint
+          DbSecret:
+            Ref: DbSecret
+      Events:
+        Test:
+          Type: Api
+          Properties:
+            RestApiId: !Ref "ApiGatewayApi"
+            Path: /api/project/{projectId}/scan/{scanId}/results
+            Method: get
+#  SnsContentScanner:
+#    Type: AWS::Serverless::Function
+#    Properties:
+#      CodeUri: s3://hindsite-sam/ab23136071d41da87e057dc40eb63330
+#      Handler: content_scanner.lambda_handler
+#      Runtime: python3.7
+#      Role:
+#        Ref: ExecutionRoleArn
+#      Layers:
+#      - Ref: DependenciesLayer
+#      Timeout: 300
+#      Environment:
+#        Variables:
+#          DbEndpoint:
+#            Ref: DbEndpoint
+#          DbSecret:
+#            Ref: DbSecret
+#          ContentDiscoveredArn:
+#            Ref: topichscontdiscref
+#          ValidatedTargetsArn:
+#            Ref: topichsvalidref
+#      Events:
+#        Test:
+#          Type: SNS
+#          Properties:
+#            Topic:
+#              Ref: topichscontentref
+#  RootStaticSiteAny:
+#    Type: AWS::ApiGateway::Method
+#    Properties:
+#      AuthorizationType: COGNITO_USER_POOLS
+#      AuthorizerId:
+#        Ref: CognitoAuthorizor
+#      HttpMethod: ANY
+#      ResourceId:
+#        Fn::GetAtt:
+#        - ApiGatewayApi
+#        - RootResourceId
+#      RestApiId:
+#        Ref: ApiGatewayApi
+#      Integration:
+#        IntegrationHttpMethod: ANY
+#        Type: HTTP_PROXY
+#        Uri:
+#          Fn::Join:
+#          - /
+#          - - http:/
+#            - Fn::Join:
+#              - .
+#              - - s3
+#                - Ref: AWS::Region
+#                - amazonaws.com
+#            - Ref: S3RedirectDestination
+#        PassthroughBehavior: WHEN_NO_MATCH
+#        IntegrationResponses:
+#        - StatusCode: 200
+#  ProjectResultsResource:
+#    Type: AWS::ApiGateway::Resource
+#    Properties:
+#      RestApiId: !Ref 'ApiGatewayApi'
+#      ParentId: !Ref 'APIProjectResource'
+#      PathPart: results.html
+#  APIResource:
+#    Type: AWS::ApiGateway::Resource
+#    Properties:
+#      RestApiId: !Ref 'ApiGatewayApi'
+#      ParentId: !GetAtt 'ApiGatewayApi.RootResourceId'
+#      PathPart: api
+#  StaticSiteCatchAllResource:
+#    Type: AWS::ApiGateway::Resource
+#    Properties:
+#      RestApiId: !Ref 'ApiGatewayApi'
+#      ParentId: !GetAtt 'ApiGatewayApi.RootResourceId'
+#      PathPart: '{item+}'
+#  APIProjectResource:
+#    Type: AWS::ApiGateway::Resource
+#    Properties:
+#      RestApiId: !Ref 'ApiGatewayApi'
+#      ParentId: !Ref 'APIResource'
+#      PathPart: project
+#  StaticSiteAny:
+#    Type: AWS::ApiGateway::Method
+#    Properties:
+#      HttpMethod: ANY
+#      ResourceId:
+#        Ref: StaticSiteCatchAllResource
+#      RestApiId:
+#        Ref: ApiGatewayApi
+#      AuthorizationType: NONE
+#      RequestParameters:
+#        method.request.path.item: true
+#      Integration:
+#        CacheKeyParameters:
+#        - method.request.path.item
+#        RequestParameters:
+#          integration.request.path.object: method.request.path.item
+#        IntegrationHttpMethod: ANY
+#        Type: HTTP_PROXY
+#        Uri:
+#          Fn::Join:
+#          - ''
+#          - - http://
+#            - Fn::Join:
+#              - ''
+#              - - s3.
+#                - Ref: AWS::Region
+#                - .
+#                - amazonaws.com
+#            - /
+#            - Ref: S3RedirectDestination
+#            - '{object}'
+#        PassthroughBehavior: WHEN_NO_MATCH
+#        IntegrationResponses:
+#        - StatusCode: 200
+#  GetProjectMock:
+#    Type: AWS::ApiGateway::Method
+#    Properties:
+#      AuthorizationType: COGNITO_USER_POOLS
+#      AuthorizerId:
+#        Ref: CognitoAuthorizor
+#      HttpMethod: GET
+#      Integration:
+#        Type: MOCK
+#        IntegrationResponses:
+#        - StatusCode: 200
+#      RequestParameters:
+#        method.request.querystring.name: false
+#      ResourceId:
+#        Ref: APIProjectResource
+#      RestApiId:
+#        Ref: ApiGatewayApi
+#      MethodResponses:
+#      - StatusCode: 200
+#  GetProjectResults:
+#    Type: AWS::ApiGateway::Method
+#    Properties:
+#      HttpMethod: GET
+#      ResourceId:
+#        Ref: ProjectResultsResource
+#      RestApiId:
+#        Ref: ApiGatewayApi
+#      AuthorizationType: NONE
+#      Integration:
+#        IntegrationHttpMethod: GET
+#        Type: HTTP_PROXY
+#        Uri:
+#          Fn::Join:
+#          - ''
+#          - - http://
+#            - Fn::Join:
+#              - ''
+#              - - s3.
+#                - Ref: AWS::Region
+#                - .
+#                - amazonaws.com
+#            - /
+#            - Ref: S3RedirectDestination
+#            - results.html
+#        PassthroughBehavior: WHEN_NO_MATCH
+#        IntegrationResponses:
+#        - StatusCode: 200
+  AuthRedirect:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      ResponseParameters:
+        gatewayresponse.header.Location:
+          Fn::Join:
+          - ''
+          - - '''https://hs-auth-'
+            - Ref: AWS::AccountId
+            - .auth.
+            - Ref: AWS::Region
+            - .amazoncognito.com/login?response_type=token&client_id=
+            - Ref: UserPoolClientRef
+            - '&redirect_uri='
+            - https://
+            - Ref: ApiGatewayApi
+            - .execute-api.
+            - Ref: AWS::Region
+            - .amazonaws.com/Production/index.html'
+      ResponseTemplates:
+        application/json: '{"message":$context.error.messageString}'
+      ResponseType: UNAUTHORIZED
+      RestApiId:
+        Ref: ApiGatewayApi
+      StatusCode: '401'
+  CognitoAuthorizor:
+    Type: AWS::ApiGateway::Authorizer
+    Properties:
+      ProviderARNs:
+      - Fn::Join:
+        - ''
+        - - 'arn:aws:cognito-idp:'
+          - Ref: AWS::Region
+          - ':'
+          - Ref: AWS::AccountId
+          - ':'
+          - userpool/
+          - Ref: CognitoUserPool
+      Type: COGNITO_USER_POOLS
+      IdentitySource: method.request.header.Auth
+      Name: HsCognitoAuthorizor
+      RestApiId:
+        Ref: ApiGatewayApi
+  ApiGatewayAccount:
+    Type: AWS::ApiGateway::Account
+    Properties:
+      CloudWatchRoleArn:
+        Ref: ApiGatewayCloudWatchLogsRoleArn
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: HindsiteAPI
+      DefinitionBody:
+        swagger: "2.0"
+        info:
+          version: "2019-02-19T06:04:29Z"
+          title: "Hindsite API"
+        basePath: "/Production"
+        schemes:
+        - "https"
+        paths:
+          /:
+            x-amazon-apigateway-any-method:
+              responses: {}
+              security:
+              - CognitoAuthorizor: []
+              x-amazon-apigateway-integration:
+                uri: !Join
+                  - ""
+                  - - "http://s3."
+                    - !Ref "AWS::Region"
+                    - ".amazonaws.com/"
+                    - !Ref "S3RedirectDestination"
+        #                uri: !Join: ["", ["http://s3.", !Ref "AWS::Region", ".amazonaws.com/", !Ref "S3RedirectDestination", "/"]]
+                responses:
+                  default:
+                    statusCode: "200"
+                passthroughBehavior: "when_no_match"
+                httpMethod: "ANY"
+                type: "http_proxy"
+          /api/cognito:
+            get:
+              produces:
+              - "application/json"
+              responses:
+                '200':
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiGetCognito.Arn}/invocations"
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                httpMethod: "POST"
+                contentHandling: "CONVERT_TO_TEXT"
+                type: "aws"
+            options:
+              consumes:
+              - "application/json"
+              produces:
+              - "application/json"
+              responses:
+                '200':
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                requestTemplates:
+                  application/json: "{\"statusCode\": 200}"
+                type: "mock"
+          /api/project:
+            get:
+              parameters:
+              - name: "name"
+                in: "query"
+                required: false
+                type: "string"
+              responses:
+                '200':
+                  description: "200 response"
+              security:
+              - CognitoAuthorizor: []
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: "200"
+                passthroughBehavior: "when_no_match"
+                type: "mock"
+          /api/project/create:
+            post:
+              consumes:
+              - "application/json"
+              produces:
+              - "application/json"
+              responses:
+                '200':
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+              security:
+              - CognitoAuthorizor: []
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiCreateProject.Arn}/invocations"
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                httpMethod: "POST"
+                requestTemplates:
+                  application/json: "{\"statusCode\": 200}"
+                type: "aws"
+            options:
+              consumes:
+              - "application/json"
+              produces:
+              - "application/json"
+              responses:
+                '200':
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+              security:
+              - CognitoAuthorizor: []
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS,GET'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                requestTemplates:
+                  application/json: "{\"statusCode\": 200}"
+                type: "mock"
+          /api/project/{projectId}:
+            get:
+              consumes:
+              - "application/json"
+              produces:
+              - "application/json"
+              responses:
+                '200':
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+              security:
+              - CognitoAuthorizor: []
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiGetProjectName.Arn}/invocations"
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                httpMethod: "POST"
+                requestTemplates:
+                  application/json: "{\"projectId\": \"$input.params('projectId')\"}"
+                type: "aws"
+            options:
+              consumes:
+              - "application/json"
+              produces:
+              - "application/json"
+              responses:
+                '200':
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+              security:
+              - CognitoAuthorizor: []
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS,GET'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                requestTemplates:
+                  application/json: "{\"statusCode\": 200}"
+                type: "mock"
+          /api/project/{projectId}/scans:
+            get:
+              consumes:
+              - "application/json"
+              produces:
+              - "application/json"
+              responses:
+                '200':
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+              security:
+              - CognitoAuthorizor: []
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiGetProjectScans.Arn}/invocations"
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                httpMethod: "POST"
+                requestTemplates:
+                  application/json: "{\"projectId\": \"$input.params('projectId')\"}"
+                type: "aws"
+            options:
+              consumes:
+              - "application/json"
+              produces:
+              - "application/json"
+              responses:
+                '200':
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+              security:
+              - CognitoAuthorizor: []
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS,GET'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                requestTemplates:
+                  application/json: "{\"statusCode\": 200}"
+                type: "mock"
+          /api/project/{projectId}/scans/stats:
+            get:
+              consumes:
+              - "application/json"
+              produces:
+              - "application/json"
+              responses:
+                '200':
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+              security:
+              - CognitoAuthorizor: []
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiGetProjectScanStats.Arn}/invocations"
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                httpMethod: "POST"
+                requestTemplates:
+                  application/json: "{\"projectId\": \"$input.params('projectId')\"}"
+                type: "aws"
+            options:
+              consumes:
+              - "application/json"
+              produces:
+              - "application/json"
+              responses:
+                '200':
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+              security:
+              - CognitoAuthorizor: []
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS,GET'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                requestTemplates:
+                  application/json: "{\"statusCode\": 200}"
+                type: "mock"
+          /api/projects:
+            get:
+              produces:
+              - "application/json"
+              responses:
+                '200':
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+              security:
+              - CognitoAuthorizor: []
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiGetProjects.Arn}/invocations"
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                httpMethod: "POST"
+                type: "aws"
+            options:
+              consumes:
+              - "application/json"
+              produces:
+              - "application/json"
+              responses:
+                '200':
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+              security:
+              - CognitoAuthorizor: []
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS,GET'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                requestTemplates:
+                  application/json: "{\"statusCode\": 200}"
+                type: "mock"
+          /api/scan/create:
+            post:
+              produces:
+              - "application/json"
+              responses:
+                '200':
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+              security:
+              - CognitoAuthorizor: []
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiCreateScan.Arn}/invocations"
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                httpMethod: "POST"
+                type: "aws"
+            options:
+              consumes:
+              - "application/json"
+              produces:
+              - "application/json"
+              responses:
+                '200':
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+              security:
+              - CognitoAuthorizor: []
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS,GET'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                requestTemplates:
+                  application/json: "{\"statusCode\": 200}"
+                type: "mock"
+          /api/scan/{scanId}:
+            options:
+              consumes:
+              - "application/json"
+              produces:
+              - "application/json"
+              responses:
+                '200':
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+              security:
+              - CognitoAuthorizor: []
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS,GET'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                requestTemplates:
+                  application/json: "{\"statusCode\": 200}"
+                type: "mock"
+          /api/scan/{scanId}/results:
+            get:
+              consumes:
+              - "application/json"
+              produces:
+              - "application/json"
+              responses:
+                '200':
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+              security:
+              - CognitoAuthorizor: []
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiGetProjectScanResults.Arn}/invocations"
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                httpMethod: "POST"
+                requestTemplates:
+                  application/json: "{\"scanId\": \"$input.params('scanId')\"}"
+                type: "aws"
+            options:
+              consumes:
+              - "application/json"
+              produces:
+              - "application/json"
+              responses:
+                '200':
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+              security:
+              - CognitoAuthorizor: []
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS,GET'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                requestTemplates:
+                  application/json: "{\"statusCode\": 200}"
+                type: "mock"
+          /api/scan/{scanId}/targets:
+            get:
+              consumes:
+              - "application/json"
+              produces:
+              - "application/json"
+              responses:
+                '200':
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+              security:
+              - CognitoAuthorizor: []
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiGetScanTargets.Arn}/invocations"
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                httpMethod: "POST"
+                requestTemplates:
+                  application/json: "{\"scanId\": \"$input.params('scanId')\"}"
+                type: "aws"
+            options:
+              consumes:
+              - "application/json"
+              produces:
+              - "application/json"
+              responses:
+                '200':
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: "string"
+                    Access-Control-Allow-Methods:
+                      type: "string"
+                    Access-Control-Allow-Headers:
+                      type: "string"
+              security:
+              - CognitoAuthorizor: []
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS,GET'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                passthroughBehavior: "when_no_match"
+                requestTemplates:
+                  application/json: "{\"statusCode\": 200}"
+                type: "mock"
+          /project/{projectId}/results.html:
+            get:
+              responses: {}
+              x-amazon-apigateway-integration:
+                uri: !Join
+                  - ""
+                  - - "http://s3."
+                    - !Ref "AWS::Region"
+                    - ".amazonaws.com/"
+                    - !Ref "S3RedirectDestination"
+        #                uri: !Join: ["", ["http://s3.", !Ref 'AWS::Region', ".amazonaws.com/", !Ref 'S3RedirectDestination', "/results.html"]]
+        #        uri: !Sub
+        #          - "http://s3.${AWS::Region}.amazonaws.com/${S3RedirectDestination}/results.html"
+                responses:
+                  default:
+                    statusCode: "200"
+                passthroughBehavior: "when_no_match"
+                httpMethod: "GET"
+                type: "http_proxy"
+          /screenshot/{object+}:
+            x-amazon-apigateway-any-method:
+              responses: {}
+              security:
+              - CognitoAuthorizor: []
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiGetScreenshot.Arn}/invocations"
+                responses:
+                  default:
+                    statusCode: "200"
+                passthroughBehavior: "when_no_match"
+                httpMethod: "POST"
+                type: "aws_proxy"
+
+          /{item+}:
+            x-amazon-apigateway-any-method:
+              parameters:
+              - name: "item"
+                in: "path"
+                required: true
+                type: "string"
+              responses: {}
+              x-amazon-apigateway-integration:
+                uri: !Join
+                  - ""
+                  - - "http://s3."
+                    - !Ref "AWS::Region"
+                    - ".amazonaws.com/"
+                    - !Ref "S3RedirectDestination"
+                responses:
+                  default:
+                    statusCode: "200"
+                requestParameters:
+                  integration.request.path.item: "method.request.path.item"
+                passthroughBehavior: "when_no_match"
+                httpMethod: "ANY"
+                cacheNamespace: "6cdrsn"
+                cacheKeyParameters:
+                - "method.request.path.item"
+                type: "http_proxy"
+        securityDefinitions:
+          CognitoAuthorizor:
+            type: "apiKey"
+            name: "Authorization"
+            in: "header"
+            x-amazon-apigateway-authtype: "cognito_user_pools"
+            x-amazon-apigateway-authorizer:
+                providerARNs:
+                  - Ref: CognitoUserPool
+        definitions:
+          Empty:
+            type: "object"
+            title: "Empty Schema"
+#          'Fn::Transform':
+#            Name: 'AWS::Include'
+#            Parameters:
+#              Location: s3://hindsite-code-repo-us-east-1/cf-stacks/swagger.yaml
+      StageName: Production
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizor
+        Authorizers:
+          CognitoAuthorizor:
+            UserPoolArn:
+              Ref: CognitoUserPool
+            Identity:
+              Header: Auth
+
+Outputs:
+  HindsiteRestAPIRef:
+    Value: !Ref 'ApiGatewayApi'
+
+

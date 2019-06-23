@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  DefaultSecurityGroupRef:
+    Type: String
+  HindsitePublicSubnetRef:
+    Type: String
+  HindsitePrivateSubnetRef:
+    Type: String
+  ExecutionRoleArn:
+    Type: String
+  SetupDatabaseExecutionRoleArn:
+    Type: String
+  ApiGatewayCloudWatchLogsRoleArn:
+    Type: String
+  CognitoExecutionRoleArn:
+    Type: String
+  DependenciesLayer:
+    Type: String
+Resources:
+  SetupCognitoUserPoolDomain:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 60
+      CodeUri: s3://hindsite-code-repo-us-east-1/functions/1.0/hs-setup-cognito.zip
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.7
+      Role:
+        Ref: CognitoExecutionRoleArn
+      Layers:
+      - Ref: DependenciesLayer
+
+  SetupUI:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 60
+      CodeUri: s3://hindsite-code-repo-us-east-1/functions/1.0/hs-setup-ui.zip
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.7
+      Role:
+        Ref: SetupDatabaseExecutionRoleArn
+      Layers:
+      - Ref: DependenciesLayer
+
+  SetupDatabase:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 60
+      CodeUri: s3://hindsite-code-repo-us-east-1/functions/1.0/hs-setup-database.zip
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.7
+      Role:
+        Ref: SetupDatabaseExecutionRoleArn
+      Layers:
+      - Ref: DependenciesLayer
+
+Outputs:
+  CloudFormationCognitoUserPoolDomainArn:
+    Value: !GetAtt 'SetupCognitoUserPoolDomain.Arn'
+  CloudFormationSetupUIArn:
+    Value: !GetAtt 'SetupUI.Arn'
+  CloudFormationSetupDatabaseArn:
+    Value: !GetAtt 'SetupDatabase.Arn'

@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  topichscontdisc:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: hscontdisc
+  topichscontent:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: hscontent
+  topichsport:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: hsport
+  topichsscan:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: hsscan
+  topichsunvalid:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: hs-unvalid
+  topichsvalid:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: hs-valid
+Outputs:
+  topichsunvalidref:
+    Value: !Ref 'topichsunvalid'
+  topichsvalidref:
+    Value: !Ref 'topichsvalid'
+  topichsscanref:
+    Value: !Ref 'topichsscan'
+  topichscontentref:
+    Value: !Ref 'topichscontent'
+  topichscontdiscref:
+    Value: !Ref 'topichscontdisc'
+  topichsportref:
+    Value: !Ref 'topichsport'

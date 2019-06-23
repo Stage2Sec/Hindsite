@@ -1,0 +1,83 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  CloudFormationCognitoUserPoolDomainArn:
+    Type: String
+  CloudFormationSetupUIArn:
+    Type: String
+  CloudFormationSetupDatabaseArn:
+    Type: String
+Resources:
+  HindsiteCoreBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join
+        - '-'
+        - - hindsite
+          - !Select
+            - 2
+            - !Split
+              - /
+              - !Ref 'AWS::StackId'
+  HindsiteUIBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: PublicRead
+      BucketName: !Join
+        - '-'
+        - - hindsite-ui
+          - !Select
+            - 2
+            - !Split
+              - /
+              - !Ref 'AWS::StackId'
+      WebsiteConfiguration:
+        IndexDocument: index.html
+  HindsiteUIBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref 'HindsiteUIBucket'
+      PolicyDocument:
+        Version: '2008-10-17'
+        Statement:
+          - Sid: AllowPublicRead
+            Effect: Allow
+            Principal:
+              AWS: '*'
+            Action:
+              - s3:GetObject
+            Resource:
+              - !Join
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref 'HindsiteUIBucket'
+                  - /*
+              - !Join
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref 'HindsiteUIBucket'
+  SetupUI:
+    Type: Custom::SetupUI
+    Properties:
+      ServiceToken: !Ref 'CloudFormationSetupUIArn'
+      UiBucketName: !Join
+        - '-'
+        - - hindsite-ui
+          - !Select
+            - 2
+            - !Split
+              - /
+              - !Ref 'AWS::StackId'
+      CoreBucketName: !Ref 'HindsiteCoreBucket'
+Outputs:
+  CoreBucketRef:
+    Value: !Ref 'HindsiteCoreBucket'
+  S3RedirectDestination:
+    Value: !Join
+      - ''
+      - - hindsite-ui-
+        - !Select
+          - 2
+          - !Split
+            - /
+            - !Ref 'AWS::StackId'
+        - /static/

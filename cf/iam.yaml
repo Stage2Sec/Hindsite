@@ -1,0 +1,175 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaENIManagementAccess
+      Policies:
+        - PolicyName: hindsite-lambda-execution
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: VisualEditor0
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+              - Sid: VisualEditor1
+                Effect: Allow
+                Action:
+                  - sns:*
+                  - ec2:DescribeInstances
+                  - ec2:CreateNetworkInterface
+                  - ec2:AttachNetworkInterface
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:DeleteNetworkInterface
+                  - ec2:DetachNetworkInterface
+                  - ec2:ModifyNetworkInterfaceAttribute
+                  - ec2:ResetNetworkInterfaceAttribute
+                  - autoscaling:CompleteLifecycleAction
+                Resource: '*'
+              - Sid: VisualEditor2
+                Effect: Allow
+                Action: logs:CreateLogGroup
+                Resource: arn:aws:logs:*:*:*
+      RoleName: hindsite-lambda-execution2
+  ApiGatewayCloudWatchLogsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        -
+          Action:
+            - "sts:AssumeRole"
+          Effect: "Allow"
+          Principal:
+            Service:
+              - "apigateway.amazonaws.com"
+        Version: '2012-10-17'
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+  CognitoExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaENIManagementAccess
+      Policies:
+        - PolicyName: hindsite-lambda-execution2
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: VisualEditor0
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:CreateLogGroup
+                  - logs:PutLogEvents
+                  - ec2:DescribeInstances
+                  - ec2:CreateNetworkInterface
+                  - ec2:AttachNetworkInterface
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:DeleteNetworkInterface
+                  - ec2:DetachNetworkInterface
+                  - ec2:ModifyNetworkInterfaceAttribute
+                  - ec2:ResetNetworkInterfaceAttribute
+                  - autoscaling:CompleteLifecycleAction
+                Resource: arn:aws:logs:*:*:*
+              - Sid: VisualEditor1
+                Effect: Allow
+                Action:
+                  - sns:*
+                Resource: '*'
+              - Sid: VisualEditor2
+                Effect: Allow
+                Action: logs:CreateLogGroup
+                Resource: arn:aws:logs:*:*:*
+        - PolicyName: ManageUserPoolDomains
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: cognito-idp:CreateUserPoolDomain
+                Resource: arn:aws:cognito-idp:*:*:userpool/*
+              - Effect: Allow
+                Action: cognito-idp:DeleteUserPoolDomain
+                Resource: arn:aws:cognito-idp:*:*:userpool/*
+              - Effect: Allow
+                Action: cognito-idp:DescribeUserPoolDomain
+                Resource: '*'
+              - Effect: Allow
+                Action: cognito-idp:UpdateUserPoolClient
+                Resource: arn:aws:cognito-idp:*:*:userpool/*
+      RoleName: hindsite-lambda-execution
+  SetupDatabaseExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaENIManagementAccess
+      Policies:
+        - PolicyName: hindsite-lambda-execution
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: VisualEditor0
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - autoscaling:CompleteLifecycleAction
+                Resource: arn:aws:logs:*:*:*
+              - Sid: VisualEditor1
+                Effect: Allow
+                Action:
+                  - sns:*
+                Resource: '*'
+              - Sid: VisualEditor3
+                Effect: Allow
+                Action:
+                  - rds:ModifyDBCluster
+                  - rds-data:ExecuteStatement
+                  - secretsmanager:GetSecretValue
+                Resource: '*'
+              - Sid: VisualEditor2
+                Effect: Allow
+                Action: logs:CreateLogGroup
+                Resource: arn:aws:logs:*:*:*
+      RoleName: hindsite-setup
+Outputs:
+  ExecutionRoleArn:
+    Value: !GetAtt 'ExecutionRole.Arn'
+  SetupDatabaseExecutionRoleArn:
+    Value: !GetAtt 'SetupDatabaseExecutionRole.Arn'
+  CognitoExecutionRoleArn:
+    Value: !GetAtt 'CognitoExecutionRole.Arn'
+  ApiGatewayCloudWatchLogsRoleArn:
+    Value: !GetAtt 'ApiGatewayCloudWatchLogsRole.Arn'

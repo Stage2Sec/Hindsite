@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  topichsunvalidref:
+    Type: String
+  topichsvalidref:
+    Type: String
+#  hsapigetscanresultsarn:
+#    Type: String
+#  hsapigetprojectscanstatsarn:
+#    Type: String
+#  hsapigetprojectnamearn:
+#    Type: String
+#  hsapigetscantargetsarn:
+#    Type: String
+#  hsapigetprojectscansarn:
+#    Type: String
+#  hscontentdiscoveryqueuerarn:
+#    Type: String
+#  hstargetvalidatorarn:
+#    Type: String
+#  hsapicreateprojectarn:
+#    Type: String
+#  hsapigetprojectsarn:
+#    Type: String
+#  hscontentscannerarn:
+#    Type: String
+#  hscreatetargetarn:
+#    Type: String
+#  hsportscannerarn:
+#    Type: String
+#  hsscreenshotcontentarn:
+#    Type: String
+#  hsmasterqueuerarn:
+    Type: String
+  topichsscanref:
+    Type: String
+  topichscontentref:
+    Type: String
+  topichscontdiscref:
+    Type: String
+  topichsportref:
+    Type: String
+Resources:
+  ContentScreenshotContentDiscovery:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref 'topichscontdiscref'
+      Endpoint: !Ref 'hsscreenshotcontentarn'
+      Protocol: lambda
+  ContentScannerContent:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref 'topichscontentref'
+      Endpoint: !Ref 'hscontentscannerarn'
+      Protocol: lambda
+  PortScannerPort:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref 'topichsportref'
+      Endpoint: !Ref 'hsportscannerarn'
+      Protocol: lambda
+  MasterQueuerHsScanSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref 'topichsscanref'
+      Endpoint: !Ref 'hsmasterqueuerarn'
+      Protocol: lambda
+  ContentQueuerValidatedSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref 'topichsvalidref'
+      Endpoint: !Ref 'hscontentdiscoveryqueuerarn'
+      Protocol: lambda
+  ValidatorUnValidatedSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref 'topichsunvalidref'
+      Endpoint: !Ref 'hstargetvalidatorarn'
+      Protocol: lambda

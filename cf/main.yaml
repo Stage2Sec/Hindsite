@@ -1,0 +1,163 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  SigninEmail:
+    Type: String
+Resources:
+  DependenciesStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/hindsite-code-repo-us-east-1/cf-stacks/dependencies.yaml
+      TimeoutInMinutes: '5'
+  SecretsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/hindsite-code-repo-us-east-1/cf-stacks/secrets.yaml
+      TimeoutInMinutes: '5'
+  IamStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/hindsite-code-repo-us-east-1/cf-stacks/iam.yaml
+      TimeoutInMinutes: '5'
+  NetworkingStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/hindsite-code-repo-us-east-1/cf-stacks/networking.yaml
+      TimeoutInMinutes: '5'
+  SnsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/hindsite-code-repo-us-east-1/cf-stacks/sns.yaml
+      TimeoutInMinutes: '5'
+  CfLambdaStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - NetworkingStack
+      - IamStack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/hindsite-code-repo-us-east-1/cf-stacks/cf-lambda.yaml
+      TimeoutInMinutes: '5'
+      Parameters:
+        DefaultSecurityGroupRef: !GetAtt 'NetworkingStack.Outputs.DefaultSecurityGroupRef'
+        HindsitePublicSubnetRef: !GetAtt 'NetworkingStack.Outputs.HindsitePublicSubnetRef'
+        HindsitePrivateSubnetRef: !GetAtt 'NetworkingStack.Outputs.HindsitePrivateSubnetRef'
+        ExecutionRoleArn: !GetAtt 'IamStack.Outputs.ExecutionRoleArn'
+        SetupDatabaseExecutionRoleArn: !GetAtt 'IamStack.Outputs.SetupDatabaseExecutionRoleArn'
+        ApiGatewayCloudWatchLogsRoleArn: !GetAtt 'IamStack.Outputs.ApiGatewayCloudWatchLogsRoleArn'
+        CognitoExecutionRoleArn: !GetAtt 'IamStack.Outputs.CognitoExecutionRoleArn'
+        DependenciesLayer: !GetAtt 'DependenciesStack.Outputs.DependenciesLayer'
+  CognitoStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - CfLambdaStack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/hindsite-code-repo-us-east-1/cf-stacks/cognito.yaml
+      TimeoutInMinutes: '5'
+      Parameters:
+        SigninEmail: !Ref 'SigninEmail'
+        CloudFormationCognitoUserPoolDomainArn: !GetAtt 'CfLambdaStack.Outputs.CloudFormationCognitoUserPoolDomainArn'
+        CloudFormationSetupUIArn: !GetAtt 'CfLambdaStack.Outputs.CloudFormationSetupUIArn'
+        CloudFormationSetupDatabaseArn: !GetAtt 'CfLambdaStack.Outputs.CloudFormationSetupDatabaseArn'
+  CognitoAppClient:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - SamStack
+      - CognitoStack
+      - CfLambdaStack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/hindsite-code-repo-us-east-1/cf-stacks/cognito-app-client.yaml
+      TimeoutInMinutes: '5'
+      Parameters:
+        UserPoolClientRef: !GetAtt 'CognitoStack.Outputs.UserPoolClientRef'
+        UserPoolRef: !GetAtt 'CognitoStack.Outputs.UserPoolRef'
+        HindsiteRestAPIRef: !GetAtt 'SamStack.Outputs.HindsiteRestAPIRef'
+        CloudFormationCognitoUserPoolDomainArn: !GetAtt 'CfLambdaStack.Outputs.CloudFormationCognitoUserPoolDomainArn'
+#  SnsSubscriptionStack:
+#    Type: AWS::CloudFormation::Stack
+#    DependsOn:
+#      - SnsStack
+#      - SamStack
+#    Properties:
+#      TemplateURL: https://s3.amazonaws.com/hindsite-code-repo-us-east-1/cf-stacks/sns-subscription.yaml
+#      TimeoutInMinutes: '5'
+#      Parameters:
+#        topichsunvalidref: !GetAtt 'SnsStack.Outputs.topichsunvalidref'
+#        topichsvalidref: !GetAtt 'SnsStack.Outputs.topichsvalidref'
+#        topichsscanref: !GetAtt 'SnsStack.Outputs.topichsscanref'
+#        topichsportref: !GetAtt 'SnsStack.Outputs.topichsportref'
+#        topichscontentref: !GetAtt 'SnsStack.Outputs.topichscontentref'
+#        topichscontdiscref: !GetAtt 'SnsStack.Outputs.topichscontdiscref'
+#        hscontentscannerarn: !GetAtt 'SamStack.Outputs.hscontentscannerarn'
+#        hsapigetscanresultsarn: !GetAtt 'SamStack.Outputs.hsapigetscanresultsarn'
+#        hsapigetprojectscanstatsarn: !GetAtt 'SamStack.Outputs.hsapigetprojectscanstatsarn'
+#        hsapigetprojectnamearn: !GetAtt 'SamStack.Outputs.hsapigetprojectnamearn'
+#        hsapigetscantargetsarn: !GetAtt 'SamStack.Outputs.hsapigetscantargetsarn'
+#        hsapigetprojectscansarn: !GetAtt 'SamStack.Outputs.hsapigetprojectscansarn'
+#        hscontentdiscoveryqueuerarn: !GetAtt 'SamStack.Outputs.hscontentdiscoveryqueuerarn'
+#        hscreatetargetarn: !GetAtt 'SamStack.Outputs.hscreatetargetarn'
+#        hsportscannerarn: !GetAtt 'SamStack.Outputs.hsportscannerarn'
+#        hsscreenshotcontentarn: !GetAtt 'SamStack.Outputs.hsscreenshotcontentarn'
+#        hsapigetprojectsarn: !GetAtt 'SamStack.Outputs.hsapigetprojectsarn'
+#        hstargetvalidatorarn: !GetAtt 'SamStack.Outputs.hstargetvalidatorarn'
+#        hsmasterqueuerarn: !GetAtt 'SamStack.Outputs.hsmasterqueuerarn'
+#        hsapicreateprojectarn: !GetAtt 'SamStack.Outputs.hsapicreateprojectarn'
+  RdsStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - CfLambdaStack
+      - NetworkingStack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/hindsite-code-repo-us-east-1/cf-stacks/rds.yaml
+      TimeoutInMinutes: '10'
+      Parameters:
+        DatabaseSecret: !GetAtt 'SecretsStack.Outputs.DatabaseSecret'
+        DefaultSecurityGroupRef: !GetAtt 'NetworkingStack.Outputs.DefaultSecurityGroupRef'
+        HindsitePublicSubnetRef: !GetAtt 'NetworkingStack.Outputs.HindsitePublicSubnetRef'
+        HindsitePrivateSubnetRef: !GetAtt 'NetworkingStack.Outputs.HindsitePrivateSubnetRef'
+        CloudFormationCognitoUserPoolDomainArn: !GetAtt 'CfLambdaStack.Outputs.CloudFormationCognitoUserPoolDomainArn'
+        CloudFormationSetupUIArn: !GetAtt 'CfLambdaStack.Outputs.CloudFormationSetupUIArn'
+        CloudFormationSetupDatabaseArn: !GetAtt 'CfLambdaStack.Outputs.CloudFormationSetupDatabaseArn'
+  S3Stack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - CfLambdaStack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/hindsite-code-repo-us-east-1/cf-stacks/s3.yaml
+      TimeoutInMinutes: '5'
+      Parameters:
+        CloudFormationCognitoUserPoolDomainArn: !GetAtt 'CfLambdaStack.Outputs.CloudFormationCognitoUserPoolDomainArn'
+        CloudFormationSetupUIArn: !GetAtt 'CfLambdaStack.Outputs.CloudFormationSetupUIArn'
+        CloudFormationSetupDatabaseArn: !GetAtt 'CfLambdaStack.Outputs.CloudFormationCognitoUserPoolDomainArn'
+  SamStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - RdsStack
+      - SecretsStack
+      - S3Stack
+      - CognitoStack
+      - IamStack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/hindsite-code-repo-us-east-1/cf-stacks/sam.yaml
+      TimeoutInMinutes: '5'
+      Parameters:
+        ExecutionRoleArn: !GetAtt 'IamStack.Outputs.ExecutionRoleArn'
+        DbEndpoint: !GetAtt 'RdsStack.Outputs.DbEndpoint'
+        DbSecret: !GetAtt 'SecretsStack.Outputs.DatabaseSecret'
+        CoreBucketRef: !GetAtt 'S3Stack.Outputs.CoreBucketRef'
+        S3RedirectDestination: !GetAtt 'S3Stack.Outputs.S3RedirectDestination'
+        CognitoUserPool: !GetAtt 'CognitoStack.Outputs.UserPoolRef'
+        UserPoolClientRef: !GetAtt 'CognitoStack.Outputs.UserPoolClientRef'
+        ApiGatewayCloudWatchLogsRoleArn: !GetAtt 'IamStack.Outputs.ApiGatewayCloudWatchLogsRoleArn'
+        DependenciesLayer: !GetAtt 'DependenciesStack.Outputs.DependenciesLayer'
+Outputs:
+  UserPoolId:
+    Value: UserPool
+    Export:
+      Name: UserPool::Id
+  UserPoolClientId:
+    Value: UserPoolClient
+    Export:
+      Name: UserPoolClient::Id
+  IdentityPoolId:
+    Value: IdentityPool
+    Export:
+      Name: IdentityPool::Id

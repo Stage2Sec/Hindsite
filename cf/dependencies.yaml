@@ -1,0 +1,18 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: "sam-app"
+Resources:
+  Dependencies:
+      Type: AWS::Serverless::LayerVersion
+      Properties:
+        LayerName: hindsite-dependencies
+        Description: General dependencies for Hindsite functions
+        ContentUri: s3://hindsite-sam/94c6d9af029288a686b13963aac88efd
+        CompatibleRuntimes:
+        - python3.7
+        LicenseInfo: MIT
+        RetentionPolicy: Retain
+
+Outputs:
+  DependenciesLayer:
+    Value: !Ref "Dependencies"

@@ -1,0 +1,116 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  SigninEmail:
+    Type: String
+  CloudFormationCognitoUserPoolDomainArn:
+    Type: String
+  CloudFormationSetupUIArn:
+    Type: String
+  CloudFormationSetupDatabaseArn:
+    Type: String
+Resources:
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+        UnusedAccountValidityDays: 30
+      UserPoolName: hindsite-user-pool
+      MfaConfiguration: 'OFF'
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: hs-client
+      GenerateSecret: false
+      UserPoolId: !Ref 'UserPool'
+  IdentityPool:
+    Type: AWS::Cognito::IdentityPool
+    Properties:
+      IdentityPoolName: HindsiteIdentity
+      AllowUnauthenticatedIdentities: true
+      CognitoIdentityProviders:
+        - ClientId: !Ref 'UserPoolClient'
+          ProviderName: !GetAtt 'UserPool.ProviderName'
+  IdentityPoolRoleMapping:
+    Type: AWS::Cognito::IdentityPoolRoleAttachment
+    Properties:
+      IdentityPoolId: !Ref 'IdentityPool'
+      Roles:
+        authenticated: !GetAtt 'CognitoAuthorizedRole.Arn'
+        unauthenticated: !GetAtt 'CognitoAuthorizedRole.Arn'
+  DefaultHindsiteUser:
+    Type: AWS::Cognito::UserPoolUser
+    Properties:
+      DesiredDeliveryMediums:
+        - EMAIL
+      UserAttributes:
+        - Name: email
+          Value: !Ref 'SigninEmail'
+      Username: !Ref 'SigninEmail'
+      UserPoolId: !Ref 'UserPool'
+  CognitoUnAuthorizedRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: cognito-identity.amazonaws.com
+            Action:
+              - sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                cognito-identity.amazonaws.com:aud: !Ref 'IdentityPool'
+              ForAnyValue:StringLike:
+                cognito-identity.amazonaws.com:amr: unauthenticated
+      Policies:
+        - PolicyName: CognitoUnauthorizedPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - mobileanalytics:PutEvents
+                  - cognito-sync:*
+                Resource: '*'
+  CognitoAuthorizedRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: cognito-identity.amazonaws.com
+            Action:
+              - sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                cognito-identity.amazonaws.com:aud: IdentityPool
+              ForAnyValue:StringLike:
+                cognito-identity.amazonaws.com:amr: authenticated
+      Policies:
+        - PolicyName: CognitoAuthorizedPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - mobileanalytics:PutEvents
+                  - cognito-sync:*
+                  - cognito-identity:*
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: '*'
+Outputs:
+  UserPoolRef:
+    Value: !GetAtt 'UserPool.Arn'
+  UserPoolClientRef:
+    Value: !Ref 'UserPoolClient'

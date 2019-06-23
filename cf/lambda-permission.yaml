@@ -1,0 +1,207 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  HindsiteRestAPIRef:
+    Type: String
+  topichsunvalidref:
+    Type: String
+  topichsvalidref:
+    Type: String
+  hsapigetscanresultsarn:
+    Type: String
+  hsapigetprojectscanstatsarn:
+    Type: String
+  hsapigetprojectnamearn:
+    Type: String
+  hsapigetscantargetsarn:
+    Type: String
+  hsapigetprojectscansarn:
+    Type: String
+  hscontentdiscoveryqueuerarn:
+    Type: String
+  hstargetvalidatorarn:
+    Type: String
+  hsapicreateprojectarn:
+    Type: String
+  hsapigetprojectsarn:
+    Type: String
+  hscontentscannerarn:
+    Type: String
+  hscreatetargetarn:
+    Type: String
+  hsportscannerarn:
+    Type: String
+  hsscreenshotcontentarn:
+    Type: String
+  hsmasterqueuerarn:
+    Type: String
+  topichsscanref:
+    Type: String
+  topichscontentref:
+    Type: String
+  topichscontdiscref:
+    Type: String
+  topichsportref:
+    Type: String
+Resources:
+  LambdaPermissionCreateProject:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !Ref 'hsapicreateprojectarn'
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref 'AWS::AccountId'
+          - ':'
+          - !Ref 'HindsiteRestAPIRef'
+          - /*/*/*
+  LambdaPermissionCreateTarget:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !Ref 'hscreatetargetarn'
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref 'AWS::AccountId'
+          - ':'
+          - !Ref 'HindsiteRestAPIRef'
+          - /*/*/*
+  LambdaPermissionGetProjects:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !Ref 'hsapigetprojectsarn'
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref 'AWS::AccountId'
+          - ':'
+          - !Ref 'HindsiteRestAPIRef'
+          - /*/*/*
+  LambdaPermissionGetProjectScans:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !Ref 'hsapigetprojectscansarn'
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref 'AWS::AccountId'
+          - ':'
+          - !Ref 'HindsiteRestAPIRef'
+          - /*/*/*
+  LambdaPermissionGetScanTargets:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !Ref 'hsapigetscantargetsarn'
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref 'AWS::AccountId'
+          - ':'
+          - !Ref 'HindsiteRestAPIRef'
+          - /*/*/*
+  LambdaPermissionGetProjectName:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !Ref 'hsapigetprojectnamearn'
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref 'AWS::AccountId'
+          - ':'
+          - !Ref 'HindsiteRestAPIRef'
+          - /*/*/*
+  LambdaPermissionProjectScanStats:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !Ref 'hsapigetprojectscanstatsarn'
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref 'AWS::AccountId'
+          - ':'
+          - !Ref 'HindsiteRestAPIRef'
+          - /*/*/*
+  LambdaPermissionGetScanResults:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !Ref 'hsapigetscanresultsarn'
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref 'AWS::AccountId'
+          - ':'
+          - !Ref 'HindsiteRestAPIRef'
+          - /*/*/*
+  LambdaPermissionPortScanner:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !Ref 'hsportscannerarn'
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref 'topichsportref'
+  MasterQueuerLambdaSNSPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !Ref 'hsmasterqueuerarn'
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref 'topichsscanref'
+  ContentDiscoveryLambdaSNSPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !Ref 'hsscreenshotcontentarn'
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref 'topichscontdiscref'
+  TargetValidatorLambdaSNSPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !Ref 'hstargetvalidatorarn'
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref 'topichsunvalidref'
+  ContentScannerSNSLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !Ref 'hscontentscannerarn'
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref 'topichscontentref'
+  ContentDiscoveryQueuerLambdaSNSPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !Ref 'hscontentdiscoveryqueuerarn'
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref 'topichsvalidref'
