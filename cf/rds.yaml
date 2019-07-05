@@ -41,7 +41,7 @@ Resources:
     Type: Custom::SetupDatabase
     Properties:
       ServiceToken: !Ref 'CloudFormationSetupDatabaseArn'
-      DatabaseHost: !GetAtt 'hindsitedb.Endpoint.Address'
+      DatabaseHost: !Ref 'hindsitedb'
       DbEndpoint: !Ref hindsitedb
       DbSecret: !Ref DatabaseSecret
 Outputs:
@@ -49,3 +49,5 @@ Outputs:
     Value: !GetAtt 'hindsitedb.Endpoint.Address'
   DbUser:
     Value: hindsite
+  MasterUserPassword:
+    Value: !Join ['', ['{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:password}}' ]]
